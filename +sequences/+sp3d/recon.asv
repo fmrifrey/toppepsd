@@ -11,7 +11,6 @@ raw = raw(end:-1:1,:,:,:); % first dimension is flipped
 ndat = size(raw,1);
 ncoils = size(raw,2);
 nviews = size(raw,4);
-ndims = 2;
 
 % Read in the initial kspace trajectory
 [~,gx_sp0,gy_sp0,gz_sp0] = toppe.readmod('readout.mod');
@@ -34,6 +33,5 @@ end
 ro_delay = 10;
 klocs = klocs((1:size(kdata,1)) + ro_delay,:,:);
 
-% Recon
-[im,smap] = reconutils.recon_cgsense(klocs(:,1:ndims), kdata, arg.N*ones(1,ndims), arg.fov*ones(1,ndims), 'compfrac', 1);
+[im,smap] = reconutils.recon_cgsense(klocsi(:,1:2), kdatai, 128*ones(1,2), 20*ones(1,2), 'compfrac', 1/32);
 lbview(im);
