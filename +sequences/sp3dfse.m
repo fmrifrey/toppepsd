@@ -67,8 +67,8 @@ arg.Tdelay = 50;
 
 % Parse arguments
 arg = toppe.utils.vararg_pair(arg, varargin);
-
-save arg
+seq = arg;
+save seq
 
 % Set tipdown type
 if arg.tipdown_fa < 30

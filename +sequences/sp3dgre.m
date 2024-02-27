@@ -46,8 +46,8 @@ arg.spiral_nnav = 100;
 arg.crush_ncycles = 6;
 arg.padtime = 1000;
 arg.nframes = 1;
-arg.nshots = 1;
-arg.nechoes = 128;
+arg.nshots = 128;
+arg.nechoes = 1;
 arg.ndd = 0;
 arg.TE = 'min';
 arg.TR = 50;
@@ -56,8 +56,8 @@ arg.ndims = 2;
 
 % Parse arguments
 arg = toppe.utils.vararg_pair(arg, varargin);
-
-save arg
+seq = arg;
+save seq
 
 % Set tipdown type
 if arg.tipdown_fa < 30
@@ -90,7 +90,7 @@ toppe.writemod(sys, ...
 % Create initial spiral trajectory
 g_sp0 = psdutils.spiral.spgrad(sys, arg.spiral_dir, ...
     arg.fov*[1,0,0], arg.spiral_kxymax, arg.spiral_kzmax, ...
-    arg.nechoes, arg.spiral_nnav);
+    arg.nshots, arg.spiral_nnav);
 
 % Write readout out to mod file
 toppe.writemod(sys, ...
