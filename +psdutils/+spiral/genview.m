@@ -26,7 +26,7 @@ function R = genview(shotn, nshots, spiraln, nspirals, ...
             rz = 0;
             dz = 1;
         case 'r2ax'
-            rx = acos(mod((shotn*nspirals + spiraln)*phi1,1)); % polar angle
+            rx = 2*acos(mod((shotn*nspirals + spiraln)*phi1,1)); % polar angle
             ry = 0;
             rz = 2*pi*mod((shotn*nspirals + spiraln)*phi2,1); % azimuthal angle
             dz = 1;

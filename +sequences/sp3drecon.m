@@ -1,6 +1,8 @@
 function [im,smap] = sp3drecon(varargin)
 % Input arguments:
-%   ro_delay: kspace sampling delay, default = 10
+%   ro_delay: kspace sampling delay (can be a fraction), default = 0
+%   nclip: number of samples to clip from beginning and end of readout,
+%       default = 50
 %   smap: complex coil sensitivity maps (dimensions must be consistent),
 %       default = []
 %   niter: number of conjugate gradient iterations (0 = conjugate phase),
@@ -8,7 +10,8 @@ function [im,smap] = sp3drecon(varargin)
 %   compfrac: coil compression factor (fraction < 1), default = 1
 
 % Set default arguments
-arg.ro_delay = 10;
+arg.ro_delay = 0;
+arg.nclip = 50;
 arg.niter = 0;
 arg.compfrac = 1;
 arg.smap = [];
@@ -39,25 +42,31 @@ k_sp0 = sys.gamma*1e-4*cumsum(g_sp0,2)*sys.raster*1e-6;
 fprintf('ordering views and data...\n');
 kdata = zeros(ndat,seq.nechoes*seq.nshots,seq.nframes,ncoils);
 klocs = zeros(size(k_sp0,2),seq.nechoes*seq.nshots,3);
+scanloop = importdata('scanloop.txt','\t',3);
+scanloop = scanloop.data;
+rotmatrices = scanloop(scanloop(:,10) == 1, end-11:end-3) / 32767;
 for framen = 1:seq.nframes
     for shotn = 1:seq.nshots
         for echon = 1:seq.nechoes
-            R = eul2rotm([((shotn-1)*seq.nechoes + echon)*pi*(3 - sqrt(5))/2,0,0],"ZYX");
+            R = ones(3);
+            R(1,:) = rotmatrices((framen-1)*seq.nshots*seq.nechoes + (shotn-1)*seq.nechoes + echon,1:3);
+            R(2,:) = rotmatrices((framen-1)*seq.nshots*seq.nechoes + (shotn-1)*seq.nechoes + echon,4:6);
+            R(3,:) = rotmatrices((framen-1)*seq.nshots*seq.nechoes + (shotn-1)*seq.nechoes + echon,7:9);
             kdata(:,(shotn-1)*seq.nechoes + echon,framen,:) = permute(raw(:,:,1,(shotn-1)*seq.nechoes + echon),[1,3,4,2]);
             klocs(:,(shotn-1)*seq.nechoes + echon,:) = permute(R*k_sp0,[2,3,1]);
         end
     end
 end
 
-% Apply readout delay
-fprintf('applying readout delay of %d samples...\n', arg.ro_delay);
-klocs = klocs((1:size(kdata,1)) + arg.ro_delay,:,:);
+% Apply sampling delay and clip end points
+klocs = interp1(1:size(klocs,1), klocs, (arg.nclip+1:size(kdata,1)-arg.nclip)+arg.ro_delay);
+kdata = kdata(arg.nclip+1:end-arg.nclip,:,:,:);
 
 % Reshape data and recon
 fprintf('reshaping data and reconning...\n');
-klocs = reshape(klocs(50:end,:,1:seq.ndims),[],seq.ndims);
-kdata = reshape(kdata(50:end,:,1,:),[],1,ncoils);
-[im,smap] = reconutils.recon_cgsense(klocs, kdata, ...
+klocs = reshape(klocs,[],3);
+kdata = reshape(kdata,[],seq.nframes,ncoils);
+[im,smap] = reconutils.recon_cgsense(klocs(:,1:seq.ndims), kdata, ...
     seq.N*ones(1,seq.ndims), seq.fov*ones(1,seq.ndims), ...
     'compfrac', arg.compfrac,'niter',arg.niter,'smap',arg.smap);
 

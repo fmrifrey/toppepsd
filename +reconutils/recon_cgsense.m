@@ -65,7 +65,7 @@ if ncoils > 1
 end
 
 % Make regularizer
-R = Reg1(ones(dim), 'beta', 2^-12 * numel(klocs)/3, ...
+R = Reg1(ones(dim), 'beta', 2^-12 * size(klocs,1), ...
     'mask', true(dim));
 C = R.C;
 
@@ -82,7 +82,7 @@ for i = 1:nframes
     % Recon using preconditioned conjugate gradient (iterative)
     if arg.niter > 0
         im_pcg = qpwls_pcg1(im_cp(true(dim)), Gm, W, kdataf(:), C, ...
-            'niter', niter,'isave', 1:niter);
+            'niter', arg.niter,'isave', 1:arg.niter);
         im(:,i) = im_pcg(:,1);
     else % ...or save image with CP recon
         im(:,i) = im_cp;
